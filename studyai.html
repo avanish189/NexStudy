@@ -645,6 +645,9 @@ textarea#mainInput::placeholder { color: var(--text4); }
   text-transform:uppercase;letter-spacing:.07em;color:#00a896;margin-bottom:5px;
 }
 .s-content { font-size:14.5px;color:#1a1a2e;line-height:1.85;white-space:pre-wrap;word-break:break-word; }
+.s-explanation {
+  margin-top:6px; font-size:13.5px; color:#5a6270; font-style:italic; border-left:3px solid #cbd5e1; padding-left:10px;
+}
 .s-annotation {
   margin-top:8px;display:flex;align-items:flex-start;gap:6px;
 }
@@ -653,6 +656,29 @@ textarea#mainInput::placeholder { color: var(--text4); }
   font-size:12px;color:#78350f;
   background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);
   border-radius:6px;padding:4px 10px;line-height:1.6;
+}
+
+/* New Exam Insights Cards */
+.insight-card {
+  background:white; border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; margin-bottom:12px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.03);
+}
+.insight-card h4 {
+  font-family:var(--ff-head); font-size:12px; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px; display:flex; align-items:center; gap:6px; margin-top:0;
+}
+.insight-card ul { margin-left:20px; font-size:13px; color:#334155; line-height:1.6; padding-left:0; list-style-position:inside; margin-bottom:0; }
+.insight-card p { font-size:13px; color:#334155; line-height:1.6; margin:0; }
+.insight-formulas h4 { color:#0ea5e9; }
+.insight-mistakes h4 { color:#ef4444; }
+.insight-tricks h4 { color:#f59e0b; }
+
+/* Pure Solution */
+.pure-sol-btn {
+  background: #f8fafc; border: 1px solid #cbd5e1; color: #334155; font-size:13px; font-weight:600; padding:6px 12px; border-radius:6px; cursor:pointer; display:flex; align-items:center; gap:6px; transition:0.2s; white-space:nowrap;
+}
+.pure-sol-btn:hover { background: #f1f5f9; border-color:#94a3b8; }
+.pure-solution-box {
+  background:#1e293b; color:#f8fafc; padding:16px; border-radius:8px; font-size:15px; font-family:monospace; white-space:pre-wrap; margin-bottom:20px; display:none; line-height:1.7; box-shadow:inset 0 2px 4px rgba(0,0,0,0.2); border:1px solid #0f172a;
 }
 
 .final-box {
@@ -1039,6 +1065,9 @@ textarea#mainInput::placeholder { color: var(--text4); }
       <img src="nexstudy_logo.png" alt="NexStudy Logo" style="height: 38px; width: auto;">
     </div>
     <div class="nav-right">
+      <!-- Exam Mode Button -->
+      <button class="tb" onclick="openExamMode()" style="background:var(--cardbg);color:var(--gold);border:1px solid var(--gold);padding:6px 12px;margin-right:10px;border-radius:20px;">🏆 Exam Mode</button>
+      
       <!-- Usage indicator -->
       <div class="nav-usage" id="navUsage">
         <div class="usage-pips" id="usagePips"></div>
@@ -1119,7 +1148,7 @@ textarea#mainInput::placeholder { color: var(--text4); }
           <input type="file" id="fileUpload" accept="image/*" style="display:none;">
           <button class="tb" id="cameraBtn" onclick="doCamera()"><span class="ic">📷</span> Camera</button>
           <button class="tb voice-btn" id="voiceBtn"><span class="ic">🎤</span> Voice</button>
-          <button class="tb" id="clearBtn"><span class="ic">🗑</span> Clear</button>
+          <button class="tb" id="clearBtn" onclick="newQuestion()"><span class="ic">🗑</span> Clear</button>
           <button class="tb solve-btn" id="solveBtn" onclick="solve()">✨ Solve Now →</button>
         </div>
       </div>
@@ -1326,11 +1355,107 @@ textarea#mainInput::placeholder { color: var(--text4); }
   </div>
 </div>
 
+<div class="modal-overlay" id="qHistoryModal">
+  <div class="modal" style="max-width:600px; width:100%; height:80vh; display:flex; flex-direction:column; padding:0; overflow:hidden;">
+    <div style="padding:20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+      <h3 style="margin:0; color:var(--gold);">📖 Question History</h3>
+      <button class="tb" onclick="closeHistoryModal()" style="background:var(--bg);">❌ Close</button>
+    </div>
+    <div id="qHistoryModalList" style="padding:20px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:10px;">
+      <!-- list injected here -->
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <!-- ═══════════════════════════════════════════════════════
      JAVASCRIPT
      ═══════════════════════════════════════════════════════ -->
+<!-- EXAM MODE PAGE -->
+<div class="page" id="examModePage" style="display:none; padding:20px; color:var(--text1); max-width:800px; margin:0 auto;">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <h2 style="margin:0; color:var(--gold);">🏆 Exam Mode</h2>
+    <button class="tb" onclick="closeExamMode()" style="background:var(--cardbg); color:var(--text3);">❌ Close</button>
+  </div>
+  <p style="color:var(--text3); font-size:14px; margin-bottom: 20px;">Test your knowledge with 20 custom-generated MCQs. Strict 1-Hour Limit.</p>
+  
+  <div id="examSetup" style="background:var(--cardbg); border-radius:12px; padding:20px; border:1px solid var(--border);">
+    <h3 style="margin-top:0; color:var(--gold);">Configure Your Exam</h3>
+    <button class="tb" onclick="openExamHistory()" style="background:var(--bg); border:1px solid var(--border); width:100%; margin-bottom:20px; text-align:center;">📜 View Exam History</button>
+    <div style="margin-bottom:15px;">
+      <label>Student Name</label>
+      <input type="text" id="examInputName" placeholder="Enter full name" class="login-input" style="width:100%; margin-top:5px; background:var(--bg); border:1px solid var(--border); color:var(--text1); padding:10px; border-radius:8px;">
+    </div>
+    <div style="margin-bottom:15px; display:flex; gap:10px;">
+      <div style="flex:1;">
+        <label>Class</label>
+        <select id="examInputClass" style="width:100%; margin-top:5px; background:var(--bg); border:1px solid var(--border); color:var(--text1); padding:10px; border-radius:8px;">
+          <option value="6">Class 6</option><option value="7">Class 7</option><option value="8">Class 8</option>
+          <option value="9">Class 9</option><option value="10" selected>Class 10</option>
+          <option value="11">Class 11</option><option value="12">Class 12</option>
+        </select>
+      </div>
+      <div style="flex:1;">
+        <label>Subject</label>
+        <input type="text" id="examInputSubject" placeholder="e.g. Science" class="login-input" style="width:100%; margin-top:5px; background:var(--bg); border:1px solid var(--border); color:var(--text1); padding:10px; border-radius:8px;">
+      </div>
+    </div>
+    <div style="margin-bottom:15px;">
+      <label>Specific Topic / Chapter</label>
+      <input type="text" id="examInputTopic" placeholder="e.g. Cell Structure & Functions" class="login-input" style="width:100%; margin-top:5px; background:var(--bg); border:1px solid var(--border); color:var(--text1); padding:10px; border-radius:8px;">
+    </div>
+    <div style="margin-bottom:15px;">
+      <label>Parent's Email Address (For Report)</label>
+      <input type="email" id="examInputEmail" placeholder="parent@email.com" class="login-input" style="width:100%; margin-top:5px; background:var(--bg); border:1px solid var(--border); color:var(--text1); padding:10px; border-radius:8px;">
+    </div>
+    <button class="btn-primary" onclick="startExam()" style="width:100%;">Start Exam Now →</button>
+  </div>
+  
+  <div id="examPlay" style="display:none; background:var(--cardbg); border-radius:12px; padding:20px; border:1px solid var(--border); margin-top:20px;">
+    <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:10px; margin-bottom:20px;">
+      <span id="examQNum" style="color:var(--gold); font-weight:bold;">Question 1 / 20</span>
+      <span id="examTimer" style="color:#FF3B30; font-weight:bold;">60:00</span>
+    </div>
+    <div id="examQuestionText" style="font-size:18px; margin-bottom:20px; line-height:1.5;">Loading question...</div>
+    <div id="examOptionsList" style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;">
+      <!-- Options go here -->
+    </div>
+    <div style="text-align:right; margin-top:15px;">
+      <button class="btn-primary" id="examSubmitBtn" onclick="submitExamAnswer()">Submit & Next →</button>
+    </div>
+  </div>
+
+  <div id="examMistakeDiv" style="display:none; background:rgba(255,59,48,0.1); border-left:4px solid #FF3B30; padding:15px; border-radius:4px; font-size:15px; margin-top:15px;">
+    <strong>❌ Explanation: </strong> <span id="mistakeContent"></span>
+    <button class="tb" onclick="nextExamQuestion()" style="margin-top:10px; background:var(--cardbg);">Next Question →</button>
+  </div>
+  
+  <div id="examResult" style="display:none; background:var(--cardbg); border-radius:12px; padding:20px; margin-top:20px; text-align:center;">
+    <h3 style="color:var(--gold); font-size:24px;" id="examResultTitle">Test Complete! 🎉</h3>
+    <div id="examFinalScore" style="font-size:30px; font-weight:bold; margin:20px 0;">Score: 0 / 20</div>
+    
+    <div id="examFeedback" style="text-align:left; background:var(--bg); padding:15px; border-radius:8px; border:1px solid var(--border);">
+      <p style="color:var(--text3); font-style:italic;">Generating final feedback report & emailing parents...</p>
+    </div>
+    
+    <button class="btn-primary" style="margin-top:20px;" onclick="closeExamMode()">Done</button>
+  </div>
+  
+  <div id="examHistoryView" style="display:none; background:var(--cardbg); border-radius:12px; padding:20px; border:1px solid var(--border); margin-top:20px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+      <h3 style="margin:0; color:var(--gold);">📜 Past Exams</h3>
+      <button class="tb" onclick="closeExamHistory()" style="background:var(--bg);">&larr; Back</button>
+    </div>
+    <div id="examHistoryListContent" style="display:flex; flex-direction:column; gap:10px;"></div>
+  </div>
+  
+  <div id="examHistoryDetailView" style="display:none; background:var(--cardbg); border-radius:12px; padding:20px; border:1px solid var(--border); margin-top:20px;">
+    <button class="tb" onclick="backToExamHistoryList()" style="background:var(--bg); margin-bottom:15px;">&larr; Back to List</button>
+    <div id="examHistoryDetailContent"></div>
+  </div>
+</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
@@ -1367,6 +1492,7 @@ window.state = {
   uploadedImg: null,
   ocrText: "",
   qHistory: [],
+  examHistory: [],
   loadStageTimer: null,
   selectedPlan: { id:'monthly', price:'₹99/mo' }
 };
@@ -1419,6 +1545,23 @@ async function saveHistory(arr) {
   if (!state.user) return;
   await saveUserData(state.user.uid, { history: arr });
 };
+
+async function loadExamHistory() {
+  if (!state.user) return [];
+  const data = await loadUserData(state.user.uid);
+  return data?.examHistory || [];
+}
+
+async function saveExamHistory(arr) {
+  if (!state.user) return;
+  await saveUserData(state.user.uid, { examHistory: arr });
+}
+
+async function addToExamHistory(examResult) {
+  state.examHistory.unshift(examResult);
+  if (state.examHistory.length > 20) state.examHistory.pop();
+  await saveExamHistory(state.examHistory);
+}
 
 async function logout() {
   await signOut(auth);
@@ -1520,7 +1663,7 @@ async function finishSetup() {
   btn.disabled = true;
   btn.innerText = "Saving...";
 
-  const u = { class: state.selClass, stream: state.selStream, premium: false, joinedAt: Date.now(), usage: 0, history: [] };
+  const u = { class: state.selClass, stream: state.selStream, premium: false, joinedAt: Date.now(), usage: 0, history: [], examHistory: [] };
   await window.saveUserData(state.user.uid, u);
   
   btn.disabled = false;
@@ -1564,6 +1707,7 @@ async function initHome() {
 
   updateUsageUI();
   loadHistory();
+  state.examHistory = await loadExamHistory();
 
   // Examples
   document.querySelectorAll('.ex-card').forEach(c => {
@@ -1663,9 +1807,9 @@ async function loadHistory() {
   renderHistory();
 }
 
-async function addToHistory(q) {
-  state.qHistory.unshift(q);
-  if (state.qHistory.length > 8) state.qHistory.pop();
+async function addToHistory(qObj) {
+  state.qHistory.unshift(qObj);
+  if (state.qHistory.length > 20) state.qHistory.pop(); // Increased limit to 20
   await saveHistory(state.qHistory);
   renderHistory();
 }
@@ -1677,13 +1821,24 @@ function renderHistory() {
   const label = document.createElement('span');
   label.className = 'hist-label'; label.textContent = 'Recent:';
   row.innerHTML = ''; row.appendChild(label);
-  state.qHistory.forEach((h, i) => {
+  
+  // Show only top 8 in the shortcut row
+  state.qHistory.slice(0, 8).forEach((h, i) => {
+    const qStr = typeof h === 'object' ? h.question : h;
     const c = document.createElement('div');
-    c.className = 'hist-chip'; c.title = h;
-    c.textContent = h.substring(0, 36) + (h.length > 36 ? '…' : '');
+    c.className = 'hist-chip'; c.title = qStr;
+    c.textContent = qStr.substring(0, 36) + (qStr.length > 36 ? '…' : '');
     c.onclick = () => {
-      document.getElementById('mainInput').value = h;
-      document.getElementById('taChar').textContent = h.length + '/2000';
+      if (typeof h === 'object' && h.answer) {
+        document.getElementById('mainInput').value = qStr;
+        document.getElementById('taChar').textContent = qStr.length + '/2000';
+        hideAnswerArea();
+        renderAnswer(h.answer, qStr);
+        showToast('🔄 Loaded from History!');
+      } else {
+        document.getElementById('mainInput').value = qStr;
+        document.getElementById('taChar').textContent = qStr.length + '/2000';
+      }
     };
     row.appendChild(c);
   });
@@ -1697,6 +1852,35 @@ let cropperInstance = null;
 let cameraStream = null;
 let currentFileType = 'image/png';
 let currentFileName = 'cropped_image.png';
+
+function openCropper(imageSrc) {
+  const modal = document.getElementById('cropModal');
+  const imgTarget = document.getElementById('cropImageTarget');
+  imgTarget.src = imageSrc;
+  modal.classList.add('open');
+  if (cropperInstance) cropperInstance.destroy();
+  cropperInstance = new window.Cropper(imgTarget, { viewMode: 1, autoCropArea: 1 });
+}
+
+function closeCrop() {
+  document.getElementById('cropModal').classList.remove('open');
+  if (cropperInstance) cropperInstance.destroy();
+  cropperInstance = null;
+  document.getElementById('fileUpload').value = '';
+}
+
+function confirmCrop() {
+  if (!cropperInstance) return;
+  const canvas = cropperInstance.getCroppedCanvas({ maxWidth: 1024, maxHeight: 1024 });
+  const base64 = canvas.toDataURL('image/jpeg', 0.8);
+  closeCrop();
+  
+  state.uploadedImg = { base64: base64, fileType: 'image/jpeg' };
+  document.getElementById('imgStrip').style.display = 'flex';
+  document.getElementById('prevImg').src = base64;
+  document.getElementById('prevName').textContent = currentFileName || 'Cropped Image';
+  document.getElementById('ocrStatus').style.display = 'none'; // Bypassed Tesseract for native Gemini OCR
+}
 
 async function handleImageUpload(e) {
   const file = e.target.files[0]; if (!file) return;
@@ -1712,173 +1896,30 @@ async function handleImageUpload(e) {
 }
 
 async function doCamera() {
-  try {
-    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-    const video = document.getElementById('cameraFeed');
-    video.srcObject = cameraStream;
-    document.getElementById('cameraModal').style.display = 'flex';
-  } catch (err) {
-    showError('Could not access camera. Please check permissions.');
-  }
-}
-
-function closeCamera() {
-  if (cameraStream) {
-    cameraStream.getTracks().forEach(track => track.stop());
-    cameraStream = null;
-  }
-  document.getElementById('cameraModal').style.display = 'none';
-}
-
-function takePhoto() {
-  const video = document.getElementById('cameraFeed');
-  const canvas = document.createElement('canvas');
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-  const dataUrl = canvas.toDataURL('image/png');
-  currentFileType = 'image/png';
-  currentFileName = 'camera_capture.png';
-  closeCamera();
-  openCropper(dataUrl);
-}
-
-function openCropper(imageSrc) {
-  document.getElementById('cropModal').style.display = 'flex';
-  const imgTarget = document.getElementById('cropImageTarget');
-  imgTarget.src = imageSrc;
-  
-  if (cropperInstance) { cropperInstance.destroy(); }
-  
-  // Initialize Cropper.js
-  cropperInstance = new Cropper(imgTarget, {
-    viewMode: 1,
-    autoCropArea: 0.8,
-    background: false
-  });
-}
-
-function closeCrop() {
-  if (cropperInstance) { cropperInstance.destroy(); cropperInstance = null; }
-  document.getElementById('cropModal').style.display = 'none';
-  document.getElementById('fileUpload').value = '';
-}
-
-async function confirmCrop() {
-  if (!cropperInstance) return;
-  const croppedCanvas = cropperInstance.getCroppedCanvas();
-  const croppedDataUrl = croppedCanvas.toDataURL(currentFileType);
-  closeCrop();
-
-  // Continue to normal OCR pipeline using the cropped image
-  state.uploadedImg = { base64: croppedDataUrl.split(',')[1], type: currentFileType };
-  document.getElementById('prevImg').src = croppedDataUrl;
-  document.getElementById('prevName').textContent = currentFileName;
-  document.getElementById('imgStrip').style.display = 'flex';
-
-  // OCR
-  const ocrEl = document.getElementById('ocrStatus');
-  ocrEl.style.display = 'flex';
-  document.getElementById('ocrStatusText').textContent = 'Extracting text from image…';
-
-  try {
-    const result = await Tesseract.recognize(croppedDataUrl, 'eng', {
-      logger: m => { if (m.status === 'recognizing text') document.getElementById('ocrStatusText').textContent = 'OCR progress: ' + Math.round(m.progress*100) + '%'; }
-    });
-    state.ocrText = result.data.text.trim();
-    ocrEl.style.display = 'none';
-    if (state.ocrText) {
-      document.getElementById('mainInput').value = state.ocrText;
-      document.getElementById('taChar').textContent = state.ocrText.length + '/2000';
-      showToast('✅ Text extracted from cropped image!');
-    } else {
-      showToast('⚠️ Could not read text cleanly. Type your question manually.');
-    }
-  } catch {
-    ocrEl.style.display = 'none';
-    showToast('⚠️ OCR failed. Please type your question.');
-  }
+  showError("Camera feature is temporarily blocked.");
 }
 
 /* ──────────────────────────────────────────
-   VOICE INPUT
+   SOLVE & CACHE SYSTEM
    ────────────────────────────────────────── */
-let currentRec = null;
+window.questionCache = new Map();
 
-function doVoice() {
-  if (currentRec) {
-    currentRec.stop();
-    return;
-  }
-  
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { showError('Voice input requires Google Chrome.'); return; }
-  
-  const rec = new SR(); 
-  rec.lang = 'en-IN';
-  rec.continuous = true; 
-  rec.interimResults = true;
-  currentRec = rec;
-  
-  const btn = document.getElementById('voiceBtn');
-  const inputEl = document.getElementById('mainInput');
-  
-  let finalTranscript = inputEl.value; 
-  if (finalTranscript && !finalTranscript.endsWith(' ')) finalTranscript += ' ';
-
-  rec.onstart = () => { 
-    btn.classList.add('on'); 
-    btn.innerHTML = '<span class="ic">🔴</span> Stop'; 
-    showToast('🎙️ Sun rahe hain... jo bolenge wahi type hoga');
-  };
-  
-  rec.onresult = e => {
-    let interimTranscript = '';
-    let newFinal = '';
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) {
-            newFinal += e.results[i][0].transcript;
-        } else {
-            interimTranscript += e.results[i][0].transcript;
-        }
-    }
-    if (newFinal) {
-        finalTranscript += newFinal + ' ';
-    }
-    inputEl.value = finalTranscript + interimTranscript;
-    document.getElementById('taChar').textContent = inputEl.value.length + '/2000';
-  };
-  
-  rec.onend = () => { 
-    btn.classList.remove('on'); 
-    btn.innerHTML = '<span class="ic">🎤</span> Voice'; 
-    currentRec = null;
-  };
-  
-  rec.onerror = (e) => {
-    if(e.error !== 'aborted') {
-      showError('Mic Error: ' + e.error);
-    }
-    currentRec = null;
-    btn.classList.remove('on'); 
-    btn.innerHTML = '<span class="ic">🎤</span> Voice'; 
-  };
-  
-  rec.start();
-}
-
-/* ──────────────────────────────────────────
-   SOLVE
-   ────────────────────────────────────────── */
 async function solve() {
   const q = document.getElementById('mainInput').value.trim();
   if (!q && !state.uploadedImg) { showError('Please type a question or upload an image.'); return; }
+
+  // CACHE CHECK (No API call if already solved)
+  const cacheKey = q + (state.uploadedImg ? "_" + state.uploadedImg.base64.substring(0, 50) : '');
+  if (window.questionCache.has(cacheKey)) {
+    showToast('⚡ Loaded from Smart Cache! (0 API calls)');
+    renderAnswer(window.questionCache.get(cacheKey), q);
+    return;
+  }
 
   const data = await loadUserData(state.user.uid);
   const isPremium = data?.premium || state.email === 'ig.avanish18@gmail.com';
   const used = await getUsage();
 
-  // Check limit
   if (!isPremium && used >= window.FREE_LIMIT) {
     window.openUpgrade(); return;
   }
@@ -1887,39 +1928,42 @@ async function solve() {
   setLoading(true);
   startLoadStages();
 
-  const prompt = buildPrompt(q || 'Solve the question in this image.');
-  let content = state.uploadedImg
-    ? [{ type:'image', source:{type:'base64', media_type:state.uploadedImg.type, data:state.uploadedImg.base64}},
-       { type:'text', text:(q?q+'\n\n':'')+prompt }]
-    : [{ type:'text', text:prompt }];
-
   try {
+    const payload = { text: q };
+    if (state.uploadedImg) {
+      payload.image = state.uploadedImg.base64;
+    }
+
     const res = await fetch(API, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        system:'You are an expert teacher for Class '+state.selClass+' students. Respond ONLY with valid JSON — no markdown, no text outside JSON.',
-        messages:[{role:'user', content}]
-      })
+      body:JSON.stringify(payload)
     });
 
-    if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error?.message||'API Error '+res.status); }
+    if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error||'API Error '+res.status); }
 
-    const data = await res.json();
-    const raw = data.content.filter(b=>b.type==='text').map(b=>b.text).join('').trim();
-
+    const respData = await res.json();
     let parsed;
-    try { parsed = JSON.parse(raw.replace(/^```json\s*/,'').replace(/```$/,'').trim()); }
-    catch { const m=raw.match(/\{[\s\S]*\}/); if(m) parsed=JSON.parse(m[0]); else throw new Error('Could not parse response.'); }
+    try { 
+      parsed = JSON.parse(respData.answer.replace(/^```json\s*/,'').replace(/```$/,'').trim()); 
+    } catch { 
+      throw new Error('Could not parse response.'); 
+    }
 
-    // Increment usage
+    // Save to Cache
+    window.questionCache.set(cacheKey, parsed);
+
+    // Usage & History
     await setUsage(used + 1);
     await updateUsageUI();
+    
+    // Save rich object
+    await addToHistory({
+      timestamp: Date.now(),
+      question: q || '📷 Image question',
+      answer: parsed
+    });
 
-    // History
-    await addToHistory(q || '📷 Image question');
-
-    // Check if this was last free question
     if (!isPremium && used + 1 >= window.FREE_LIMIT) {
       showToast('⚡ Last free question used! Upgrade for unlimited access.');
       setTimeout(openUpgrade, 3000);
@@ -1937,59 +1981,46 @@ async function solve() {
 }
 
 /* ──────────────────────────────────────────
-   PROMPT
+   RENDER ANSWER & UI OPTIMIZATIONS
    ────────────────────────────────────────── */
-function buildPrompt(q) {
-  return `You are a brilliant, patient teacher helping a Class ${state.selClass} student with ${state.selSubject}.
-
-Student's question: ${q}
-
-Give a complete exam-style answer. Respond ONLY with this JSON (no text outside, no markdown):
-{
-  "question_clean": "The question in one clear sentence",
-  "marks": "3 or 5 or 10 (estimate based on question complexity)",
-  "steps": [
-    {
-      "title": "Step name (e.g. 'Given Information', 'Formula', 'Calculation', 'Conclusion')",
-      "content": "Full step content shown exactly as written in an exam. Show all working.",
-      "annotation": "A bracket note explaining WHY this step was done — as if a teacher is whispering to the student"
-    }
-  ],
-  "final_answer": "The conclusive final answer clearly stated (use ∴ Therefore... format if applicable)",
-  "simple_english": "2-3 sentences explaining the whole concept in very simple language a Class 6 student would understand",
-  "key_concepts": ["concept1", "concept2", "concept3"],
-  "annotations": [
-    { "type": "formula",   "text": "Important formula used" },
-    { "type": "remember",  "text": "Key thing to remember for exams" },
-    { "type": "tip",       "text": "Smart exam technique" },
-    { "type": "warning",   "text": "Common mistake students make" },
-    { "type": "exam",      "text": "How this topic typically appears in exams" }
-  ]
+window.toggleSimplify = function() {
+  const el = document.getElementById('simpleExpDiv');
+  const btn = document.getElementById('simplifyBtn');
+  if(el.style.display === 'none') {
+    el.style.display = 'block';
+    btn.innerHTML = '➖ Hide Explanation';
+  } else {
+    el.style.display = 'none';
+    btn.innerHTML = '➕ Simplify Answer';
+  }
 }
 
-Rules:
-- Minimum 3, maximum 8 steps
-- For math/science: show EVERY calculation, every substitution
-- For theory: use numbered points with brief explanations  
-- Keep language simple and clear for Class ${state.selClass}
-- annotations: provide 3–5 useful margin notes
-- ONLY valid JSON`;
-}
-
-/* ──────────────────────────────────────────
-   RENDER ANSWER
-   ────────────────────────────────────────── */
 function renderAnswer(d, origQ) {
   document.getElementById('ansBadgeSubj').textContent = state.selSubject;
   document.getElementById('ansBadgeCls').textContent  = 'Class ' + state.selClass;
-  document.getElementById('paperTitle').textContent   = state.selSubject + ' · Class ' + state.selClass;
+  document.getElementById('paperTitle').textContent   = state.selSubject + ' • Class ' + state.selClass;
   document.getElementById('paperSub').textContent     = d.question_clean || origQ || 'Solution';
   document.getElementById('paperMarks').textContent   = d.marks || '—';
 
   /* MAIN COLUMN */
   const mc = document.getElementById('mainCol');
-  const qBox = `<div class="q-box"><div class="q-box-label">📘 Question</div><div class="q-box-text">${esc(d.question_clean||origQ||'—')}</div></div>`;
+  
+  // Header with Pure Solution Toggle
+  const headerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:15px;">
+      <div class="q-box" style="margin-bottom:0; flex:1; margin-right:15px;">
+        <div class="q-box-label">📝 Question</div>
+        <div class="q-box-text">${esc(d.question_clean||origQ||'—')}</div>
+      </div>
+      <button class="pure-sol-btn" onclick="document.getElementById('pureSolBox').style.display = document.getElementById('pureSolBox').style.display==='none' ? 'block' : 'none'; document.getElementById('detailedSteps').style.display = document.getElementById('pureSolBox').style.display==='none' ? 'block' : 'none'; this.innerHTML = document.getElementById('pureSolBox').style.display==='none' ? '🔍 View Pure Solution' : '📚 View Detailed Steps';">
+        🔍 View Pure Solution
+      </button>
+    </div>
+    
+    <div id="pureSolBox" class="pure-solution-box">${esc(d.pureSolution || 'Pure solution not available.')}</div>
+  `;
 
+  // Detailed Steps
   const steps = (d.steps||[]).map((s,i) => {
     const isLast = i === (d.steps.length-1);
     return `<div class="s-row">
@@ -2000,50 +2031,73 @@ function renderAnswer(d, origQ) {
       <div class="s-body">
         <div class="s-title">${esc(s.title||'Step '+(i+1))}</div>
         <div class="s-content">${esc(s.content||'')}</div>
-        ${s.annotation?`<div class="s-annotation"><div class="s-ann-arrow">⟵</div><div class="s-ann-text">${esc(s.annotation)}</div></div>`:''}
+        ${s.explanation ? `<div class="s-explanation">💡 ${esc(s.explanation)}</div>` : ''}
       </div>
     </div>`;
   }).join('');
 
   const finalBox = `<div class="final-box">
-    <div class="final-ic">✅</div>
+    <div class="final-ic">🎯</div>
     <div>
-      <div class="final-lbl">∴ Therefore — Final Answer</div>
-      <div class="final-val">${esc(d.final_answer||'—')}</div>
+      <div class="final-lbl">∴ Final Answer</div>
+      <div class="final-val">${esc(d.finalAnswer||d.final_answer||'—')}</div>
     </div>
   </div>`;
 
-  mc.innerHTML = qBox + `<div class="steps-list">${steps}</div>` + finalBox;
+  const summaryBox = d.summary ? `
+    <div style="margin-top:20px; padding:15px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px;">
+      <div style="font-family:var(--ff-head); font-size:12px; color:#475569; text-transform:uppercase; font-weight:700; margin-bottom:6px;">📋 Solution Summary</div>
+      <div style="font-size:14px; color:#1e293b; line-height:1.6;">${esc(d.summary)}</div>
+    </div>
+  ` : '';
 
-  if (d.simple_english) {
-    mc.insertAdjacentHTML('beforeend',`<div class="explain-row"><div class="explain-ic">💡</div><div><div class="explain-lbl">Simple Explanation</div><div class="explain-txt">${esc(d.simple_english)}</div></div></div>`);
-  }
-  if (d.key_concepts?.length) {
-    const tags = d.key_concepts.map(c=>`<span class="concept-tag">${esc(c)}</span>`).join('');
-    mc.insertAdjacentHTML('beforeend',`<div class="concepts-row"><span class="concepts-lbl">🔑 Key Concepts:</span>${tags}</div>`);
-  }
+  mc.innerHTML = headerHTML + `<div id="detailedSteps" class="steps-list">${steps}</div>` + finalBox + summaryBox;
 
   /* MARGIN COLUMN */
   const mgn = document.getElementById('marginCol');
-  mgn.innerHTML = '<div class="margin-head">📝 <span>Margin Notes</span></div>';
-  (d.annotations||[]).forEach(a => {
-    const t = (a.type||'').toLowerCase();
-    let html = '';
-    if (t==='formula')  html = `<div class="ann-formula">${esc(a.text)}</div>`;
-    else if (t==='tip') html = `<div class="ann-tip">${esc(a.text)}</div>`;
-    else if (t==='remember') html = `<div class="ann-remember">${esc(a.text)}</div>`;
-    else if (t==='warning')  html = `<div class="ann-warning">${esc(a.text)}</div>`;
-    else if (t==='exam')     html = `<div class="ann-exam">${esc(a.text)}</div>`;
-    else html = `<div class="ann-tip">${esc(a.text)}</div>`;
-    mgn.insertAdjacentHTML('beforeend', html);
-  });
-  if (!(d.annotations?.length)) {
-    mgn.insertAdjacentHTML('beforeend','<div class="ann-tip">Read each step carefully and try solving a similar problem on your own!</div>');
+  mgn.innerHTML = '<div class="margin-head" style="margin-bottom:15px; font-size:13px; font-weight:700; color:#64748b;">📋 EXAM INSIGHTS</div>';
+  
+  if(d.examImportance) {
+    let color = d.examImportance.toLowerCase() === 'high' ? '#FF3B30' : (d.examImportance.toLowerCase() === 'medium' ? '#FFCC00' : '#34C759');
+    mgn.insertAdjacentHTML('beforeend', `<div class="ann-exam" style="border-left-color:${color}; margin-bottom:15px;"><strong>Exam tip: Importance:</strong> ${esc(d.examImportance)}</div>`);
+  }
+  
+  // Formulas
+  if (d.formulas && d.formulas.length > 0) {
+    const list = d.formulas.map(f => `<li>${esc(f)}</li>`).join('');
+    mgn.insertAdjacentHTML('beforeend', `
+      <div class="insight-card insight-formulas">
+        <h4>🧮 Formulas Used</h4>
+        <ul style="padding-left:0; list-style-position:inside;">${list}</ul>
+      </div>
+    `);
+  }
+  
+  // Common Mistakes
+  if (d.commonMistakes && d.commonMistakes.length > 0) {
+    const list = d.commonMistakes.map(m => `<li style="margin-bottom:4px;">${esc(m)}</li>`).join('');
+    mgn.insertAdjacentHTML('beforeend', `
+      <div class="insight-card insight-mistakes">
+        <h4>⚠️ Common Mistakes</h4>
+        <ul style="padding-left:0; list-style-position:inside; color:#b91c1c;">${list}</ul>
+      </div>
+    `);
+  }
+  
+  // Tricks
+  if (d.tricks && d.tricks.toLowerCase() !== 'none') {
+    mgn.insertAdjacentHTML('beforeend', `
+      <div class="insight-card insight-tricks">
+        <h4>💡 Pro Trick</h4>
+        <p style="color:#b45309;">${esc(d.tricks)}</p>
+      </div>
+    `);
   }
 
   document.getElementById('answerSection').style.display = 'block';
   document.getElementById('answerSection').scrollIntoView({behavior:'smooth',block:'start'});
 }
+
 
 /* ──────────────────────────────────────────
    LOADING STAGES
@@ -2082,6 +2136,11 @@ function newQuestion() {
   document.getElementById('answerSection').style.display = 'none';
   document.getElementById('mainInput').value = '';
   document.getElementById('taChar').textContent = '0/2000';
+  state.uploadedImg = null; 
+  state.ocrText = '';
+  document.getElementById('imgStrip').style.display = 'none';
+  document.getElementById('ocrStatus').style.display = 'none';
+  document.getElementById('fileUpload').value = '';
   document.getElementById('mainInput').focus();
 }
 
@@ -2092,7 +2151,53 @@ function toggleDropdown() {
   document.getElementById('dropdownMenu').classList.toggle('open');
 }
 function closeDropdown() { document.getElementById('dropdownMenu').classList.remove('open'); }
-function openHistory() { window.closeDropdown(); showToast('📋 ' + state.qHistory.length + ' questions in history'); }
+function openHistory() { 
+  window.closeDropdown(); 
+  const modal = document.getElementById('qHistoryModal');
+  const list = document.getElementById('qHistoryModalList');
+  list.innerHTML = '';
+  
+  if (!state.qHistory.length) {
+    list.innerHTML = '<p style="color:var(--text3); text-align:center;">No questions asked yet.</p>';
+  } else {
+    state.qHistory.forEach((h, idx) => {
+      const qStr = typeof h === 'object' ? h.question : h;
+      const tStr = (typeof h === 'object' && h.timestamp) ? new Date(h.timestamp).toLocaleString() : 'Legacy saved';
+      const hasAnswer = (typeof h === 'object' && h.answer);
+      
+      const div = document.createElement('div');
+      div.style = 'background:var(--cardbg); border:1px solid var(--border); padding:15px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; margin-bottom:10px;';
+      
+      div.innerHTML = `
+        <div style="flex:1; padding-right:15px;">
+          <div style="font-weight:bold; color:var(--text1); font-size:15px; margin-bottom:4px;">${esc(qStr)}</div>
+          <div style="color:var(--text3); font-size:12px;">${tStr}</div>
+        </div>
+        ${hasAnswer ? `<button class="btn-primary" style="padding:6px 12px; font-size:13px;" onclick="event.stopPropagation(); viewPastQuestion(${idx})">View Solution</button>` : `<button class="btn-ghost" style="padding:6px 12px; font-size:13px;" onclick="event.stopPropagation(); document.getElementById('mainInput').value='${esc(qStr).replace(/'/g,"\\'")}'; closeHistoryModal();">Copy</button>`}
+      `;
+      div.onclick = () => { if(hasAnswer) window.viewPastQuestion(idx); else { document.getElementById('mainInput').value = qStr; closeHistoryModal(); } };
+      list.appendChild(div);
+    });
+  }
+  
+  modal.classList.add('open'); 
+}
+
+window.closeHistoryModal = function() {
+  document.getElementById('qHistoryModal').classList.remove('open');
+};
+
+window.viewPastQuestion = function(idx) {
+  const h = state.qHistory[idx];
+  if (h && typeof h === 'object' && h.answer) {
+    closeHistoryModal();
+    document.getElementById('mainInput').value = h.question;
+    document.getElementById('taChar').textContent = h.question.length + '/2000';
+    hideAnswerArea();
+    renderAnswer(h.answer, h.question);
+    showToast('🔄 Loaded from History!');
+  }
+};
 /* logout already on window early in the module */
 
 /* ──────────────────────────────────────────
@@ -2235,6 +2340,346 @@ function esc(s) {
   if (typeof takePhoto === 'function') window.takePhoto = takePhoto;
   if (typeof closeCrop === 'function') window.closeCrop = closeCrop;
   if (typeof confirmCrop === 'function') window.confirmCrop = confirmCrop;
+/* ──────────────────────────────────────────
+   EXAM MODE LOGIC
+   ────────────────────────────────────────── */
+window.examState = {
+  questions: [],
+  currentIndex: 0,
+  score: 0,
+  report: [],
+  timer: null,
+  secondsLeft: 3600, // 60 minutes
+  studentName: "",
+  classLevel: "",
+  subject: "",
+  topic: "",
+  parentEmail: "",
+  isCheating: false,
+  antiCheatListener: null,
+  startTime: null
+};
+
+window.handleVisibilityChange = function() {
+  if (document.hidden && window.examState.timer) {
+    // Cheating detected!
+    window.examState.isCheating = true;
+    showError("⚠️ Warning: Tab switching detected! Exam terminated.");
+    window.finishExam(true);
+  }
+};
+
+window.openExamMode = function() {
+  document.getElementById('homePage').style.display = 'none';
+  document.getElementById('examModePage').style.display = 'block';
+  document.getElementById('examSetup').style.display = 'block';
+  document.getElementById('examPlay').style.display = 'none';
+  document.getElementById('examResult').style.display = 'none';
+  document.getElementById('examHistoryView').style.display = 'none';
+  document.getElementById('examHistoryDetailView').style.display = 'none';
+  
+  if (state.selClass) document.getElementById('examInputClass').value = state.selClass;
+  if (state.selSubject) document.getElementById('examInputSubject').value = state.selSubject;
+  
+  // Attach Anti-Cheat Listener globally if not already attached
+  if (!window.examState.antiCheatListener) {
+    window.examState.antiCheatListener = window.handleVisibilityChange;
+    document.addEventListener("visibilitychange", window.examState.antiCheatListener);
+  }
+};
+
+window.openExamHistory = function() {
+  document.getElementById('examSetup').style.display = 'none';
+  document.getElementById('examHistoryDetailView').style.display = 'none';
+  document.getElementById('examHistoryView').style.display = 'block';
+  renderExamHistory();
+};
+
+window.closeExamHistory = function() {
+  document.getElementById('examHistoryView').style.display = 'none';
+  document.getElementById('examHistoryDetailView').style.display = 'none';
+  document.getElementById('examSetup').style.display = 'block';
+};
+
+window.closeExamMode = function() {
+  document.getElementById('examModePage').style.display = 'none';
+  document.getElementById('homePage').style.display = 'block';
+  if(window.examState.timer) { clearInterval(window.examState.timer); window.examState.timer = null; }
+  window.examState.isCheating = false;
+};
+
+window.startExam = async function() {
+  const name = document.getElementById('examInputName').value.trim();
+  const cls = document.getElementById('examInputClass').value;
+  const sub = document.getElementById('examInputSubject').value.trim();
+  const top = document.getElementById('examInputTopic').value.trim();
+  const email = document.getElementById('examInputEmail').value.trim();
+
+  if(!name || !sub || !top || !email) {
+    showError("Please fill out all fields.");
+    return;
+  }
+
+  window.examState.studentName = name;
+  window.examState.classLevel = cls;
+  window.examState.subject = sub;
+  window.examState.topic = top;
+  window.examState.parentEmail = email;
+
+  const used = await getUsage();
+  if (used >= window.FREE_LIMIT && state.email !== 'ig.avanish18@gmail.com') {
+    window.openUpgrade(); return;
+  }
+  
+  const setupDiv = document.getElementById('examSetup');
+  const prevContent = setupDiv.innerHTML;
+  setupDiv.innerHTML = "<p>⏳ Generating 20 customized MCQs (takes 10-15s)...</p>";
+  
+  try {
+    const res = await fetch('/api/exam/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ classLevel: cls, subject: sub, topic: top })
+    });
+    
+    if(!res.ok) throw new Error("API Failure");
+    
+    const questions = await res.json();
+    window.examState.questions = questions;
+    window.examState.currentIndex = 0;
+    window.examState.score = 0;
+    window.examState.report = [];
+    window.examState.secondsLeft = 3600;
+    window.examState.isCheating = false;
+    window.examState.startTime = Date.now();
+    
+    await setUsage(used + 1);
+    await updateUsageUI();
+    
+    document.getElementById('examSetup').style.display = 'none';
+    document.getElementById('examSetup').innerHTML = prevContent; // restore for next time
+    document.getElementById('examPlay').style.display = 'block';
+    document.getElementById('examResult').style.display = 'none';
+    
+    window.examState.timer = setInterval(() => {
+      window.examState.secondsLeft--;
+      if (window.examState.secondsLeft <= 0) {
+        showError("⌛ Time is up!");
+        window.finishExam(true);
+        return;
+      }
+      let m = Math.floor(window.examState.secondsLeft / 60).toString().padStart(2, '0');
+      let s = (window.examState.secondsLeft % 60).toString().padStart(2, '0');
+      document.getElementById('examTimer').textContent = `${m}:${s}`;
+    }, 1000);
+    
+    window.loadExamQuestion();
+  } catch(e) {
+    showError("Failed to generate exam: " + e.message);
+    setupDiv.innerHTML = prevContent; // Restore the form
+  }
+};
+
+window.loadExamQuestion = function() {
+  const q = window.examState.questions[window.examState.currentIndex];
+  document.getElementById('examQNum').textContent = `Question ${window.examState.currentIndex + 1} / ${window.examState.questions.length}`;
+  document.getElementById('examQuestionText').textContent = q.question;
+  
+  const optsDiv = document.getElementById('examOptionsList');
+  optsDiv.innerHTML = '';
+  
+  q.options.forEach((opt, idx) => {
+    optsDiv.innerHTML += `
+      <label style="display:flex; align-items:center; background:var(--bg); padding:12px; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
+        <input type="radio" name="examOpt" value="${esc(opt)}" style="margin-right:10px;">
+        ${esc(opt)}
+      </label>
+    `;
+  });
+
+  document.getElementById('examMistakeDiv').style.display = 'none';
+  const btn = document.getElementById('examSubmitBtn');
+  btn.style.display = 'inline-block';
+  btn.textContent = "Submit & Next →";
+  btn.disabled = false;
+};
+
+window.submitExamAnswer = async function() {
+  const selected = document.querySelector('input[name="examOpt"]:checked');
+  if(!selected) {
+    showError("Please select an option!");
+    return;
+  }
+  
+  const userAns = selected.value;
+  const q = window.examState.questions[window.examState.currentIndex];
+  const btn = document.getElementById('examSubmitBtn');
+  btn.disabled = true;
+  
+  const isCorrect = userAns === q.correctAnswer;
+  window.examState.report.push({ question: q.question, studentAnswer: userAns, isCorrect: isCorrect, explanation: q.explanation });
+
+  if (isCorrect) {
+    window.examState.score++;
+    showToast("✅ Correct!");
+    window.nextExamQuestion();
+  } else {
+    document.getElementById('examMistakeDiv').style.display = 'block';
+    document.getElementById('mistakeContent').innerHTML = `<strong>Actual Answer:</strong> ${esc(q.correctAnswer)} <br> <strong>Explanation:</strong> ${esc(q.explanation)}`;
+    btn.style.display = 'none'; // hide submit, user must click Next
+  }
+};
+
+window.nextExamQuestion = function() {
+  window.examState.currentIndex++;
+  if(window.examState.currentIndex >= window.examState.questions.length) {
+    window.finishExam(false);
+  } else {
+    window.loadExamQuestion();
+  }
+};
+
+window.finishExam = async function(forced = false) {
+  if (window.examState.timer) {
+    clearInterval(window.examState.timer);
+    window.examState.timer = null;
+  }
+  document.getElementById('examPlay').style.display = 'none';
+  document.getElementById('examMistakeDiv').style.display = 'none';
+  document.getElementById('examResult').style.display = 'block';
+  
+  if (window.examState.isCheating) {
+    document.getElementById('examResultTitle').textContent = "Exam Terminated (Cheating Detected) ⚠️";
+    document.getElementById('examResultTitle').style.color = "#FF3B30";
+  } else if (forced) {
+    document.getElementById('examResultTitle').textContent = "Time's Up! ⌛";
+  } else {
+    document.getElementById('examResultTitle').textContent = "Test Complete! 🎉";
+    document.getElementById('examResultTitle').style.color = "var(--gold)";
+  }
+
+  const totalQ = window.examState.questions.length;
+  document.getElementById('examFinalScore').textContent = `Final Score: ${window.examState.score} / ${totalQ}`;
+  
+  let reportHTML = "<ul style='padding-left:20px;'>";
+  window.examState.report.forEach(r => {
+    reportHTML += `<li style="margin-bottom:10px;">
+      <strong>Q:</strong> ${esc(r.question)}<br>
+      <strong>Answered:</strong> <span style="color:${r.isCorrect ? 'green' : 'red'}">${esc(r.studentAnswer)}</span> ${r.isCorrect ? '✅' : '❌'}<br>
+      ${r.isCorrect ? '' : `<em>Explanation:</em> ${esc(r.explanation)}`}
+    </li>`;
+  });
+  reportHTML += "</ul>";
+
+  document.getElementById('examFeedback').innerHTML = `<p style="color:var(--text3); font-style:italic;">Sending final report to parents...</p>`;
+  
+  const examResultObj = {
+    id: Date.now(),
+    startTime: window.examState.startTime,
+    endTime: Date.now(),
+    subject: window.examState.subject,
+    topic: window.examState.topic,
+    classLevel: window.examState.classLevel,
+    score: window.examState.score,
+    totalQuestions: totalQ,
+    report: window.examState.report,
+    isCheating: window.examState.isCheating
+  };
+  
+  await addToExamHistory(examResultObj);
+  
+  try {
+    const res = await fetch('/api/exam/send-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentName: window.examState.studentName,
+          classLevel: window.examState.classLevel,
+          parentEmail: window.examState.parentEmail,
+          score: window.examState.score,
+          totalQuestions: totalQ,
+          reportHTML: reportHTML
+        })
+    });
+    const d = await res.json();
+    document.getElementById('examFeedback').innerHTML = `
+      <h4 style="color:var(--gold); margin-bottom:5px;">📨 Result Sent & Saved!</h4>
+      <p style="color:var(--text1); margin-top:0;">The performance report has been successfully mailed to ${esc(window.examState.parentEmail)} and saved to your Exam History.</p>
+    `;
+  } catch(e) {
+    document.getElementById('examFeedback').innerHTML = "Could not email the report due to server error. Your score was saved locally.";
+  }
+};
+
+window.renderExamHistory = function() {
+  const container = document.getElementById('examHistoryListContent');
+  container.innerHTML = '';
+  
+  if (state.examHistory.length === 0) {
+    container.innerHTML = '<p style="color:var(--text3);">No past exams found.</p>';
+    return;
+  }
+  
+  state.examHistory.forEach(ex => {
+    const d = new Date(ex.startTime);
+    const div = document.createElement('div');
+    div.style = 'background:var(--bg); border:1px solid var(--border); padding:15px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;';
+    
+    div.innerHTML = `
+      <div>
+        <div style="font-weight:bold; color:var(--text1); font-size:16px;">${esc(ex.subject)} - ${esc(ex.topic)}</div>
+        <div style="color:var(--text3); font-size:13px; margin-top:4px;">${d.toLocaleString()} ${ex.isCheating ? '<span style="color:#FF3B30;">(Terminated)</span>' : ''}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-weight:bold; color:var(--gold); font-size:18px;">${ex.score} / ${ex.totalQuestions}</div>
+        <button class="tb" onclick="viewExamDetail(${ex.id})" style="font-size:12px; margin-top:5px; padding:4px 8px;">View Details</button>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+};
+
+window.viewExamDetail = function(id) {
+  const ex = state.examHistory.find(x => x.id === id);
+  if (!ex) return;
+  
+  document.getElementById('examHistoryView').style.display = 'none';
+  document.getElementById('examHistoryDetailView').style.display = 'block';
+  
+  const d = new Date(ex.startTime);
+  const durMinutes = Math.round((ex.endTime - ex.startTime) / 60000);
+  
+  let html = `
+    <h3 style="color:var(--gold); margin-top:0;">${esc(ex.subject)}: ${esc(ex.topic)}</h3>
+    <p style="color:var(--text3); font-size:14px; margin-bottom:20px;">
+      <strong>Date:</strong> ${d.toLocaleString()}<br>
+      <strong>Duration:</strong> ${durMinutes} min<br>
+      <strong>Score:</strong> <span style="font-size:18px; color:var(--text1); font-weight:bold;">${ex.score} / ${ex.totalQuestions}</span>
+    </p>
+    <div style="display:flex; flex-direction:column; gap:15px;">
+  `;
+  
+  ex.report.forEach((r, idx) => {
+    html += `
+      <div style="background:var(--bg); border:1px solid var(--border); padding:15px; border-radius:8px;">
+        <div style="font-weight:bold; margin-bottom:8px;">Q${idx+1}. ${esc(r.question)}</div>
+        <div style="margin-bottom:4px;"><strong>Your Answer:</strong> <span style="color:${r.isCorrect ? '#34C759' : '#FF3B30'};">${esc(r.studentAnswer)}</span> ${r.isCorrect ? '✅' : '❌'}</div>
+        ${r.isCorrect ? '' : `<div style="font-size:14px; color:var(--text3);"><em>Explanation:</em> ${esc(r.explanation)}</div>`}
+      </div>
+    `;
+  });
+  
+  html += `</div>`;
+  document.getElementById('examHistoryDetailContent').innerHTML = html;
+};
+
+window.backToExamHistoryList = function() {
+  document.getElementById('examHistoryDetailView').style.display = 'none';
+  document.getElementById('examHistoryView').style.display = 'block';
+};
+
+
+
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 </body>
